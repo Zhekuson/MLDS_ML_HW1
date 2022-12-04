@@ -2,6 +2,7 @@ import json
 
 import joblib
 import numpy as np
+from fastapi import FastAPI, Request, Form, File, UploadFile
 import pandas as pd
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -56,6 +57,23 @@ def predict_items(items: List[Item]) -> List[float]:
     car = pd.DataFrame([x.dict() for x in items])
     car = car[cols_to_save]
     return list(model.predict(car))
+
+
+@app.post("/predict_items")
+async def predict_items_file(file: UploadFile = File()):
+    file_type = file.content_type[file.content_type.find("/") + 1:]
+    if file_type == "json":
+        cars = pd.DataFrame([x.dict() for x in json.load(file.file)])
+    elif file_type == "csv":
+        cars = pd.read_csv(file)
+    cars = cars[cols_to_save]
+    cars["selling_price"] = model.predict(cars)
+    return cars
+
+
+@app.get('/')
+async def root():
+    return {"message": "working!"}
 
 
 @app.get("/example")

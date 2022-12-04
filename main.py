@@ -53,22 +53,16 @@ def predict_item(item: Item) -> float:
 
 
 @app.post("/predict_items")
-def predict_items(items: List[Item]) -> List[float]:
-    car = pd.DataFrame([x.dict() for x in items])
-    car = car[cols_to_save]
-    return list(model.predict(car))
-
-
-@app.post("/predict_items")
 async def predict_items_file(file: UploadFile = File()):
     file_type = file.content_type[file.content_type.find("/") + 1:]
+    print(file_type)
     if file_type == "json":
         cars = pd.DataFrame([x.dict() for x in json.load(file.file)])
     elif file_type == "csv":
-        cars = pd.read_csv(file)
+        cars = pd.read_csv(file.file)
     cars = cars[cols_to_save]
     cars["selling_price"] = model.predict(cars)
-    return cars
+    return cars.to_json()
 
 
 @app.get('/')
